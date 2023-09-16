@@ -75,15 +75,11 @@ def read_pkg_file(self, file):
 
     def _read_field(name):
         value = msg[name]
-        if value == 'UNKNOWN':
-            return None
-        return value
+        return None if value == 'UNKNOWN' else value
 
     def _read_list(name):
         values = msg.get_all(name, None)
-        if values == []:
-            return None
-        return values
+        return None if values == [] else values
 
     self.metadata_version = StrictVersion(msg['metadata-version'])
     self.name = _read_field('name')
@@ -204,7 +200,7 @@ sequence = tuple, list
 
 def check_importable(dist, attr, value):
     try:
-        ep = pkg_resources.EntryPoint.parse('x=' + value)
+        ep = pkg_resources.EntryPoint.parse(f'x={value}')
         assert not ep.extras
     except (TypeError, ValueError, AttributeError, AssertionError):
         raise DistutilsSetupError(
@@ -260,7 +256,7 @@ def check_extras(dist, attr, value):
 def _check_extra(extra, reqs):
     name, sep, marker = extra.partition(':')
     if marker and pkg_resources.invalid_marker(marker):
-        raise DistutilsSetupError("Invalid environment marker: " + marker)
+        raise DistutilsSetupError(f"Invalid environment marker: {marker}")
     list(pkg_resources.parse_requirements(reqs))
 
 
@@ -471,10 +467,7 @@ class Distribution(_Distribution):
                 normalized_version = str(ver)
                 if self.metadata.version != normalized_version:
                     warnings.warn(
-                        "Normalizing '%s' to '%s'" % (
-                            self.metadata.version,
-                            normalized_version,
-                        )
+                        f"Normalizing '{self.metadata.version}' to '{normalized_version}'"
                     )
                     self.metadata.version = normalized_version
             except (packaging.version.InvalidVersion, TypeError):
@@ -496,11 +489,7 @@ class Distribution(_Distribution):
 
         if getattr(self, 'extras_require', None):
             for extra in self.extras_require.keys():
-                # Since this gets called multiple times at points where the
-                # keys have become 'converted' extras, ensure that we are only
-                # truly adding extras we haven't seen before here.
-                extra = extra.split(':')[0]
-                if extra:
+                if extra := extra.split(':')[0]:
                     self.metadata.provides_extras.add(extra)
 
         self._convert_extras_requirements()
@@ -527,7 +516,7 @@ class Distribution(_Distribution):
         For a requirement, return the 'extras_require' suffix for
         that requirement.
         """
-        return ':' + str(req.marker) if req.marker else ''
+        return f':{str(req.marker)}' if req.marker else ''
 
     def _move_install_requirements_markers(self):
         """
@@ -549,11 +538,11 @@ class Distribution(_Distribution):
         self.install_requires = list(map(str, simple_reqs))
 
         for r in complex_reqs:
-            self._tmp_extras_require[':' + str(r.marker)].append(r)
-        self.extras_require = dict(
-            (k, [str(r) for r in map(self._clean_req, v)])
+            self._tmp_extras_require[f':{str(r.marker)}'].append(r)
+        self.extras_require = {
+            k: [str(r) for r in map(self._clean_req, v)]
             for k, v in self._tmp_extras_require.items()
-        )
+        }
 
     def _clean_req(self, req):
         """
@@ -661,11 +650,10 @@ class Distribution(_Distribution):
             option_dict = self.get_option_dict(command_name)
 
         if DEBUG:
-            self.announce("  setting options for '%s' command:" % command_name)
+            self.announce(f"  setting options for '{command_name}' command:")
         for (option, (source, value)) in option_dict.items():
             if DEBUG:
-                self.announce("    %s = %s (from %s)" % (option, value,
-                                                         source))
+                self.announce(f"    {option} = {value} (from {source})")
             try:
                 bool_opts = [translate_longopt(o)
                              for o in command_obj.boolean_options]
@@ -686,8 +674,8 @@ class Distribution(_Distribution):
                     setattr(command_obj, option, value)
                 else:
                     raise DistutilsOptionError(
-                        "error in %s: command '%s' has no such option '%s'"
-                        % (source, command_name, option))
+                        f"error in {source}: command '{command_name}' has no such option '{option}'"
+                    )
             except ValueError as msg:
                 raise DistutilsOptionError(msg)
 
@@ -796,12 +784,13 @@ class Distribution(_Distribution):
                 if not feature.include_by_default():
                     excdef, incdef = incdef, excdef
 
-                new = (
-                    ('with-' + name, None, 'include ' + descr + incdef),
-                    ('without-' + name, None, 'exclude ' + descr + excdef),
+                new = (f'with-{name}', None, f'include {descr}{incdef}'), (
+                    f'without-{name}',
+                    None,
+                    f'exclude {descr}{excdef}',
                 )
                 go.extend(new)
-                no['without-' + name] = 'with-' + name
+                no[f'without-{name}'] = f'with-{name}'
 
         self.global_options = self.feature_options = go + self.global_options
         self.negative_opt = self.feature_negopt = no
@@ -866,7 +855,7 @@ class Distribution(_Distribution):
         if self.feature_is_included(name) == 0:
             descr = self.features[name].description
             raise DistutilsOptionError(
-                descr + " is required, but was excluded or is not available"
+                f"{descr} is required, but was excluded or is not available"
             )
         self.features[name].include_in(self)
         self._set_feature(name, 1)
@@ -887,8 +876,7 @@ class Distribution(_Distribution):
         handle whatever special inclusion logic is needed.
         """
         for k, v in attrs.items():
-            include = getattr(self, '_include_' + k, None)
-            if include:
+            if include := getattr(self, f'_include_{k}', None):
                 include(v)
             else:
                 self._include_misc(k, v)
@@ -896,7 +884,7 @@ class Distribution(_Distribution):
     def exclude_package(self, package):
         """Remove packages, modules, and extensions in named package"""
 
-        pfx = package + '.'
+        pfx = f'{package}.'
         if self.packages:
             self.packages = [
                 p for p in self.packages
@@ -918,7 +906,7 @@ class Distribution(_Distribution):
     def has_contents_for(self, package):
         """Return true if 'exclude_package(package)' would do something"""
 
-        pfx = package + '.'
+        pfx = f'{package}.'
 
         for p in self.iter_distribution_names():
             if p == package or p.startswith(pfx):
@@ -933,12 +921,10 @@ class Distribution(_Distribution):
         try:
             old = getattr(self, name)
         except AttributeError:
-            raise DistutilsSetupError(
-                "%s: No such distribution setting" % name
-            )
+            raise DistutilsSetupError(f"{name}: No such distribution setting")
         if old is not None and not isinstance(old, sequence):
             raise DistutilsSetupError(
-                name + ": this setting cannot be changed via include/exclude"
+                f"{name}: this setting cannot be changed via include/exclude"
             )
         elif old:
             setattr(self, name, [item for item in old if item not in value])
@@ -953,14 +939,12 @@ class Distribution(_Distribution):
         try:
             old = getattr(self, name)
         except AttributeError:
-            raise DistutilsSetupError(
-                "%s: No such distribution setting" % name
-            )
+            raise DistutilsSetupError(f"{name}: No such distribution setting")
         if old is None:
             setattr(self, name, value)
         elif not isinstance(old, sequence):
             raise DistutilsSetupError(
-                name + ": this setting cannot be changed via include/exclude"
+                f"{name}: this setting cannot be changed via include/exclude"
             )
         else:
             new = [item for item in value if item not in old]
@@ -983,8 +967,7 @@ class Distribution(_Distribution):
         handle whatever special exclusion logic is needed.
         """
         for k, v in attrs.items():
-            exclude = getattr(self, '_exclude_' + k, None)
-            if exclude:
+            if exclude := getattr(self, f'_exclude_{k}', None):
                 exclude(v)
             else:
                 self._exclude_misc(k, v)
@@ -1065,12 +1048,8 @@ class Distribution(_Distribution):
     def iter_distribution_names(self):
         """Yield all packages, modules, and extension names in distribution"""
 
-        for pkg in self.packages or ():
-            yield pkg
-
-        for module in self.py_modules or ():
-            yield module
-
+        yield from self.packages or ()
+        yield from self.py_modules or ()
         for ext in self.ext_modules or ():
             if isinstance(ext, tuple):
                 name, buildinfo = ext
@@ -1103,7 +1082,7 @@ class Distribution(_Distribution):
         # Print metadata in UTF-8 no matter the platform
         encoding = sys.stdout.encoding
         errors = sys.stdout.errors
-        newline = sys.platform != 'win32' and '\n' or None
+        newline = '\n' if sys.platform != 'win32' else None
         line_buffering = sys.stdout.line_buffering
 
         sys.stdout = io.TextIOWrapper(
@@ -1195,8 +1174,7 @@ class Feature:
         self.require_features = [
             r for r in require_features if isinstance(r, str)
         ]
-        er = [r for r in require_features if not isinstance(r, str)]
-        if er:
+        if er := [r for r in require_features if not isinstance(r, str)]:
             extras['require_features'] = er
 
         if isinstance(remove, str):

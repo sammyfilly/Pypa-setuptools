@@ -17,8 +17,10 @@ from .textwrap import DALS
 
 class TestPackageIndex:
     def test_regex(self):
-        hash_url = 'http://other_url?:action=show_md5&amp;'
-        hash_url += 'digest=0123456789abcdef0123456789abcdef'
+        hash_url = (
+            'http://other_url?:action=show_md5&amp;'
+            + 'digest=0123456789abcdef0123456789abcdef'
+        )
         doc = """
             <a href="http://some_url">Name</a>
             (<a title="MD5 hash"
@@ -95,16 +97,16 @@ class TestPackageIndex:
         raise RuntimeError("Did not raise")
 
     def test_bad_url_screwy_href(self):
-        index = setuptools.package_index.PackageIndex(
-            hosts=('www.example.com',)
-        )
-
         # issue #160
         if sys.version_info[0] == 2 and sys.version_info[1] == 7:
             # this should not fail
             url = 'http://example.com'
             page = ('<a href="http://www.famfamfam.com]('
                     'http://www.famfamfam.com/">')
+            index = setuptools.package_index.PackageIndex(
+                hosts=('www.example.com',)
+            )
+
             index.process_index(url, page)
 
     def test_url_ok(self):
@@ -136,7 +138,7 @@ class TestPackageIndex:
         # start an index server
         server = IndexServer()
         server.start()
-        index_url = server.base_url() + 'test_links_priority/simple/'
+        index_url = f'{server.base_url()}test_links_priority/simple/'
 
         # scan a test index
         pi = setuptools.package_index.PackageIndex(index_url)
@@ -186,7 +188,7 @@ class TestPackageIndex:
         index_file = tmpdir / 'index.html'
         with index_file.open('w') as f:
             f.write('<div>content</div>')
-        url = 'file:' + urllib.request.pathname2url(str(tmpdir)) + '/'
+        url = f'file:{urllib.request.pathname2url(str(tmpdir))}/'
         res = setuptools.package_index.local_open(url)
         assert 'content' in res.read()
 
@@ -227,8 +229,11 @@ class TestPackageIndex:
             for p in sum([pre, post, dev], [''])
             for ll in local]
         for v, vc in versions:
-            dists = list(setuptools.package_index.distros_for_url(
-                'http://example.com/example.zip#egg=example-' + v))
+            dists = list(
+                setuptools.package_index.distros_for_url(
+                    f'http://example.com/example.zip#egg=example-{v}'
+                )
+            )
             assert dists[0].version == ''
             assert dists[1].version == vc
 

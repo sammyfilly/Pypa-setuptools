@@ -71,9 +71,7 @@ if_dl = lambda s: s if have_rtld else ''
 def get_abi3_suffix():
     """Return the file extension for an abi3-compliant Extension()"""
     for suffix in EXTENSION_SUFFIXES:
-        if '.abi3' in suffix:  # Unix
-            return suffix
-        elif suffix == '.pyd':  # Windows
+        if '.abi3' in suffix or suffix == '.pyd':  # Unix
             return suffix
 
 
@@ -112,12 +110,9 @@ class build_ext(_build_ext):
         filename = _build_ext.get_ext_filename(self, fullname)
         if fullname in self.ext_map:
             ext = self.ext_map[fullname]
-            use_abi3 = (
-                six.PY3
-                and getattr(ext, 'py_limited_api')
-                and get_abi3_suffix()
-            )
-            if use_abi3:
+            if use_abi3 := (
+                six.PY3 and getattr(ext, 'py_limited_api') and get_abi3_suffix()
+            ):
                 so_ext = get_config_var('EXT_SUFFIX')
                 filename = filename[:-len(so_ext)]
                 filename = filename + get_abi3_suffix()
@@ -126,7 +121,7 @@ class build_ext(_build_ext):
                 return self.shlib_compiler.library_filename(fn, libtype)
             elif use_stubs and ext._links_to_dynamic:
                 d, fn = os.path.split(filename)
-                return os.path.join(d, 'dl-' + fn)
+                return os.path.join(d, f'dl-{fn}')
         return filename
 
     def initialize_options(self):
@@ -230,7 +225,7 @@ class build_ext(_build_ext):
         )
         # pair each base with the extension
         pairs = itertools.product(ns_ext_bases, self.__get_output_extensions())
-        return list(base + fnext for base, fnext in pairs)
+        return [base + fnext for base, fnext in pairs]
 
     def __get_output_extensions(self):
         yield '.py'
@@ -244,34 +239,33 @@ class build_ext(_build_ext):
         stub_file = (os.path.join(output_dir, *ext._full_name.split('.')) +
                      '.py')
         if compile and os.path.exists(stub_file):
-            raise DistutilsError(stub_file + " already exists! Please delete.")
+            raise DistutilsError(f"{stub_file} already exists! Please delete.")
         if not self.dry_run:
-            f = open(stub_file, 'w')
-            f.write(
-                '\n'.join([
-                    "def __bootstrap__():",
-                    "   global __bootstrap__, __file__, __loader__",
-                    "   import sys, os, pkg_resources, imp" + if_dl(", dl"),
-                    "   __file__ = pkg_resources.resource_filename"
-                    "(__name__,%r)"
-                    % os.path.basename(ext._file_name),
-                    "   del __bootstrap__",
-                    "   if '__loader__' in globals():",
-                    "       del __loader__",
-                    if_dl("   old_flags = sys.getdlopenflags()"),
-                    "   old_dir = os.getcwd()",
-                    "   try:",
-                    "     os.chdir(os.path.dirname(__file__))",
-                    if_dl("     sys.setdlopenflags(dl.RTLD_NOW)"),
-                    "     imp.load_dynamic(__name__,__file__)",
-                    "   finally:",
-                    if_dl("     sys.setdlopenflags(old_flags)"),
-                    "     os.chdir(old_dir)",
-                    "__bootstrap__()",
-                    ""  # terminal \n
-                ])
-            )
-            f.close()
+            with open(stub_file, 'w') as f:
+                f.write(
+                    '\n'.join([
+                        "def __bootstrap__():",
+                        "   global __bootstrap__, __file__, __loader__",
+                        "   import sys, os, pkg_resources, imp" + if_dl(", dl"),
+                        "   __file__ = pkg_resources.resource_filename"
+                        "(__name__,%r)"
+                        % os.path.basename(ext._file_name),
+                        "   del __bootstrap__",
+                        "   if '__loader__' in globals():",
+                        "       del __loader__",
+                        if_dl("   old_flags = sys.getdlopenflags()"),
+                        "   old_dir = os.getcwd()",
+                        "   try:",
+                        "     os.chdir(os.path.dirname(__file__))",
+                        if_dl("     sys.setdlopenflags(dl.RTLD_NOW)"),
+                        "     imp.load_dynamic(__name__,__file__)",
+                        "   finally:",
+                        if_dl("     sys.setdlopenflags(old_flags)"),
+                        "     os.chdir(old_dir)",
+                        "__bootstrap__()",
+                        ""  # terminal \n
+                    ])
+                )
         if compile:
             from distutils.util import byte_compile
 

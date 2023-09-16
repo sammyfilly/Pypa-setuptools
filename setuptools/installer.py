@@ -82,16 +82,11 @@ def fetch_build_egg(dist, req):
     if 'allow_hosts' in opts:
         raise DistutilsError('the `allow-hosts` option is not supported '
                              'when using pip to install requirements.')
-    if 'PIP_QUIET' in os.environ or 'PIP_VERBOSE' in os.environ:
-        quiet = False
-    else:
-        quiet = True
-    if 'PIP_INDEX_URL' in os.environ:
+    quiet = 'PIP_QUIET' not in os.environ and 'PIP_VERBOSE' not in os.environ
+    if 'PIP_INDEX_URL' in os.environ or 'index_url' not in opts:
         index_url = None
-    elif 'index_url' in opts:
+    else:
         index_url = opts['index_url'][1]
-    else:
-        index_url = None
     if 'find_links' in opts:
         find_links = _fixup_find_links(opts['find_links'][1])[:]
     else:

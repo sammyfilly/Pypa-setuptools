@@ -87,14 +87,14 @@ class TestConfigurationReader:
             '[options]\n'
             'scripts = bin/a.py, bin/b.py\n'
         )
-        config_dict = read_configuration('%s' % config)
+        config_dict = read_configuration(f'{config}')
         assert config_dict['metadata']['version'] == '10.1.1'
         assert config_dict['metadata']['keywords'] == ['one', 'two']
         assert config_dict['options']['scripts'] == ['bin/a.py', 'bin/b.py']
 
     def test_no_config(self, tmpdir):
         with pytest.raises(DistutilsFileError):
-            read_configuration('%s' % tmpdir.join('setup.cfg'))
+            read_configuration(f"{tmpdir.join('setup.cfg')}")
 
     def test_ignore_errors(self, tmpdir):
         _, config = fake_env(
@@ -104,10 +104,9 @@ class TestConfigurationReader:
             'keywords = one, two\n'
         )
         with pytest.raises(ImportError):
-            read_configuration('%s' % config)
+            read_configuration(f'{config}')
 
-        config_dict = read_configuration(
-            '%s' % config, ignore_option_errors=True)
+        config_dict = read_configuration(f'{config}', ignore_option_errors=True)
 
         assert config_dict['metadata']['keywords'] == ['one', 'two']
         assert 'version' not in config_dict['metadata']
@@ -385,11 +384,11 @@ class TestMetadata:
                 dist.parse_config_files()
 
     def test_classifiers(self, tmpdir):
-        expected = set([
+        expected = {
             'Framework :: Django',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3.5',
-        ])
+        }
 
         # From file.
         _, config = fake_env(
@@ -668,9 +667,11 @@ class TestOptions:
         dir_sub_two, _ = make_package_dir('sub_two', dir_package)
 
         with get_dist(tmpdir) as dist:
-            assert set(dist.packages) == set([
-                'fake_package', 'fake_package.sub_two', 'fake_package.sub_one'
-            ])
+            assert set(dist.packages) == {
+                'fake_package',
+                'fake_package.sub_two',
+                'fake_package.sub_one',
+            }
 
         config.write(
             '[options]\n'
@@ -694,8 +695,7 @@ class TestOptions:
             '    fake_package.sub_one\n'
         )
         with get_dist(tmpdir) as dist:
-            assert set(dist.packages) == set(
-                ['fake_package',  'fake_package.sub_two'])
+            assert set(dist.packages) == {'fake_package', 'fake_package.sub_two'}
 
     @py2_only
     def test_find_namespace_directive_fails_on_py2(self, tmpdir):
@@ -766,7 +766,7 @@ class TestOptions:
                 'pdf': ['ReportLab>=1.2', 'RXP'],
                 'rest': ['docutils>=0.3', 'pack==1.1,==1.3']
             }
-            assert dist.metadata.provides_extras == set(['pdf', 'rest'])
+            assert dist.metadata.provides_extras == {'pdf', 'rest'}
 
     def test_entry_points(self, tmpdir):
         _, config = fake_env(

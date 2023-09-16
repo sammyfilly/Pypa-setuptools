@@ -41,8 +41,7 @@ def read_configuration(
     filepath = os.path.abspath(filepath)
 
     if not os.path.isfile(filepath):
-        raise DistutilsFileError(
-            'Configuration file %s does not exist.' % filepath)
+        raise DistutilsFileError(f'Configuration file {filepath} does not exist.')
 
     current_directory = os.getcwd()
     os.chdir(os.path.dirname(filepath))
@@ -159,7 +158,8 @@ class ConfigHandler:
     def parsers(self):
         """Metadata item name to parser function mapping."""
         raise NotImplementedError(
-            '%s must provide .parsers property' % self.__class__.__name__)
+            f'{self.__class__.__name__} must provide .parsers property'
+        )
 
     def __setitem__(self, option_name, value):
         unknown = tuple()
@@ -178,8 +178,7 @@ class ConfigHandler:
             return
 
         skip_option = False
-        parser = self.parsers.get(option_name)
-        if parser:
+        if parser := self.parsers.get(option_name):
             try:
                 value = parser(value)
 
@@ -191,7 +190,7 @@ class ConfigHandler:
         if skip_option:
             return
 
-        setter = getattr(target_obj, 'set_%s' % option_name, None)
+        setter = getattr(target_obj, f'set_{option_name}', None)
         if setter is None:
             setattr(target_obj, option_name, value)
         else:
@@ -212,11 +211,7 @@ class ConfigHandler:
         if isinstance(value, list):  # _get_parser_compound case
             return value
 
-        if '\n' in value:
-            value = value.splitlines()
-        else:
-            value = value.split(separator)
-
+        value = value.splitlines() if '\n' in value else value.split(separator)
         return [chunk.strip() for chunk in value if chunk.strip()]
 
     @classmethod
@@ -231,8 +226,7 @@ class ConfigHandler:
         for line in cls._parse_list(value):
             key, sep, val = line.partition(separator)
             if sep != separator:
-                raise DistutilsOptionError(
-                    'Unable to parse option value to dict: %s' % value)
+                raise DistutilsOptionError(f'Unable to parse option value to dict: {value}')
             result[key.strip()] = val.strip()
 
         return result
@@ -301,8 +295,7 @@ class ConfigHandler:
     @staticmethod
     def _assert_local(filepath):
         if not filepath.startswith(os.getcwd()):
-            raise DistutilsOptionError(
-                '`file:` directive can not access %s' % filepath)
+            raise DistutilsOptionError(f'`file:` directive can not access {filepath}')
 
     @staticmethod
     def _read_file(filepath):
@@ -383,11 +376,8 @@ class ConfigHandler:
         :param callable values_parser:
         :rtype: dict
         """
-        value = {}
         values_parser = values_parser or (lambda val: val)
-        for key, (_, val) in section_options.items():
-            value[key] = values_parser(val)
-        return value
+        return {key: values_parser(val) for key, (_, val) in section_options.items()}
 
     def parse_section(self, section_options):
         """Parses configuration file section.
@@ -410,18 +400,16 @@ class ConfigHandler:
 
             method_postfix = ''
             if section_name:  # [section.option] variant
-                method_postfix = '_%s' % section_name
+                method_postfix = f'_{section_name}'
 
             section_parser_method = getattr(
-                self,
-                # Dots in section names are translated into dunderscores.
-                ('parse_section%s' % method_postfix).replace('.', '__'),
-                None)
+                self, f'parse_section{method_postfix}'.replace('.', '__'), None
+            )
 
             if section_parser_method is None:
                 raise DistutilsOptionError(
-                    'Unsupported distribution option section: [%s.%s]' % (
-                        self.section_prefix, section_name))
+                    f'Unsupported distribution option section: [{self.section_prefix}.{section_name}]'
+                )
 
             section_parser_method(section_options)
 
@@ -521,7 +509,7 @@ class ConfigMetadataHandler(ConfigHandler):
             if hasattr(version, '__iter__'):
                 version = '.'.join(map(str, version))
             else:
-                version = '%s' % version
+                version = f'{version}'
 
         return version
 
@@ -619,8 +607,7 @@ class ConfigOptionsHandler(ConfigHandler):
     def _parse_package_data(self, section_options):
         parsed = self._parse_section_to_dict(section_options, self._parse_list)
 
-        root = parsed.get('*')
-        if root:
+        if root := parsed.get('*'):
             parsed[''] = root
             del parsed['*']
 
@@ -656,4 +643,4 @@ class ConfigOptionsHandler(ConfigHandler):
         :param dict section_options:
         """
         parsed = self._parse_section_to_dict(section_options, self._parse_list)
-        self['data_files'] = [(k, v) for k, v in parsed.items()]
+        self['data_files'] = list(parsed.items())
