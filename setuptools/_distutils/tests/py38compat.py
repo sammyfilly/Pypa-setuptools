@@ -12,7 +12,7 @@ ModuleNotFoundError = getattr(builtins, 'ModuleNotFoundError', ImportError)
 
 try:
     from test.support.warnings_helper import check_warnings
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     from test.support import check_warnings
 
 
@@ -28,7 +28,7 @@ try:
         create_empty_file,
         temp_cwd,
     )
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     from test.support import (
         change_cwd,
         rmtree,
@@ -54,7 +54,7 @@ def _save_restore_warnings_filters():
 
 try:
     from test.support.warnings_helper import save_restore_warnings_filters
-except (ModuleNotFoundError, ImportError):
+except ImportError:
     save_restore_warnings_filters = _save_restore_warnings_filters
 
 

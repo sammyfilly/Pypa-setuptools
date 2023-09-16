@@ -135,7 +135,7 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
             'somecode/',
             'somecode/__init__.py',
         ]
-        self.assertEqual(sorted(content), ['fake-1.0/' + x for x in expected])
+        self.assertEqual(sorted(content), [f'fake-1.0/{x}' for x in expected])
 
     @unittest.skipUnless(ZLIB_SUPPORT, 'Need zlib support to run')
     @unittest.skipIf(find_executable('tar') is None, "The tar command is not found")
@@ -248,7 +248,7 @@ class SDistTestCase(BasePyPIRCCommandTestCase):
             'somecode/doc.dat',
             'somecode/doc.txt',
         ]
-        self.assertEqual(sorted(content), ['fake-1.0/' + x for x in expected])
+        self.assertEqual(sorted(content), [f'fake-1.0/{x}' for x in expected])
 
         # checking the MANIFEST
         f = open(join(self.tmp_dir, 'MANIFEST'))

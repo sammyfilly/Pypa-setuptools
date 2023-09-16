@@ -287,7 +287,7 @@ class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):
             universal_newlines=True,
         )
         outs, errs = p.communicate()
-        self.assertEqual(0, p.returncode, "Subprocess failed: " + outs)
+        self.assertEqual(0, p.returncode, f"Subprocess failed: {outs}")
 
     def test_parse_config_h(self):
         config_h = sysconfig.get_config_h_filename()

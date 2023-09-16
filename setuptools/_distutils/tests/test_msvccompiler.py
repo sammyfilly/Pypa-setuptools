@@ -103,7 +103,7 @@ class TestSpawn(unittest.TestCase):
         command = [sys.executable, '-c', inner_cmd]
 
         threads = [
-            CheckThread(target=compiler.spawn, args=[command]) for n in range(100)
+            CheckThread(target=compiler.spawn, args=[command]) for _ in range(100)
         ]
         for thread in threads:
             thread.start()

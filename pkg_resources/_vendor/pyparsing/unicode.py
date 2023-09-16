@@ -105,10 +105,16 @@ class unicode_set:
         return "".join(
             sorted(
                 set(
-                    cls.identchars
-                    + "0123456789"
-                    + "".join(
-                        [c for c in cls._chars_for_ranges if ("_" + c).isidentifier()]
+                    (
+                        cls.identchars
+                        + "0123456789"
+                        + "".join(
+                            [
+                                c
+                                for c in cls._chars_for_ranges
+                                if f"_{c}".isidentifier()
+                            ]
+                        )
                     )
                 )
             )

@@ -32,7 +32,7 @@ class LoggingSilencer(object):
 
     def _log(self, level, msg, args):
         if level not in (DEBUG, INFO, WARN, ERROR, FATAL):
-            raise ValueError('%s wrong log level' % str(level))
+            raise ValueError(f'{str(level)} wrong log level')
         if not isinstance(msg, str):
             raise TypeError("msg should be str, not '%.200s'" % (type(msg).__name__))
         self.logs.append((level, msg, args))
@@ -199,9 +199,8 @@ def fixup_build_ext(cmd):
         runshared = sysconfig.get_config_var('RUNSHARED')
         if runshared is None:
             cmd.library_dirs = ['.']
+        elif sys.platform == 'darwin':
+            cmd.library_dirs = []
         else:
-            if sys.platform == 'darwin':
-                cmd.library_dirs = []
-            else:
-                name, equals, value = runshared.partition('=')
-                cmd.library_dirs = [d for d in value.split(os.pathsep) if d]
+            name, equals, value = runshared.partition('=')
+            cmd.library_dirs = [d for d in value.split(os.pathsep) if d]

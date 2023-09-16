@@ -71,9 +71,7 @@ def mkpath(name, mode=0o777, verbose=1, dry_run=0):
                 os.mkdir(head, mode)
             except OSError as exc:
                 if not (exc.errno == errno.EEXIST and os.path.isdir(head)):
-                    raise DistutilsFileError(
-                        "could not create '%s': %s" % (head, exc.args[-1])
-                    )
+                    raise DistutilsFileError(f"could not create '{head}': {exc.args[-1]}")
             created_dirs.append(head)
 
         _path_created[abs_head] = 1
@@ -90,11 +88,7 @@ def create_tree(base_dir, files, mode=0o777, verbose=1, dry_run=0):
     will be created if it doesn't already exist.  'mode', 'verbose' and
     'dry_run' flags are as for 'mkpath()'.
     """
-    # First get the list of directories to create
-    need_dir = set()
-    for file in files:
-        need_dir.add(os.path.join(base_dir, os.path.dirname(file)))
-
+    need_dir = {os.path.join(base_dir, os.path.dirname(file)) for file in files}
     # Now create them
     for dir in sorted(need_dir):
         mkpath(dir, mode, verbose=verbose, dry_run=dry_run)
@@ -132,16 +126,14 @@ def copy_tree(
     from distutils.file_util import copy_file
 
     if not dry_run and not os.path.isdir(src):
-        raise DistutilsFileError("cannot copy tree '%s': not a directory" % src)
+        raise DistutilsFileError(f"cannot copy tree '{src}': not a directory")
     try:
         names = os.listdir(src)
     except OSError as e:
         if dry_run:
             names = []
         else:
-            raise DistutilsFileError(
-                "error listing files in '%s': %s" % (src, e.strerror)
-            )
+            raise DistutilsFileError(f"error listing files in '{src}': {e.strerror}")
 
     if not dry_run:
         mkpath(dst, verbose=verbose)
@@ -234,6 +226,6 @@ def ensure_relative(path):
     This is useful to make 'path' the second argument to os.path.join().
     """
     drive, path = os.path.splitdrive(path)
-    if path[0:1] == os.sep:
+    if path[:1] == os.sep:
         path = drive + path[1:]
     return path

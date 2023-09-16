@@ -81,7 +81,7 @@ class BuildDumbTestCase(
 
         # see what we have
         dist_created = os.listdir(os.path.join(pkg_dir, 'dist'))
-        base = "%s.%s.zip" % (dist.get_fullname(), cmd.plat_name)
+        base = f"{dist.get_fullname()}.{cmd.plat_name}.zip"
 
         self.assertEqual(dist_created, [base])
 
@@ -95,7 +95,7 @@ class BuildDumbTestCase(
         contents = sorted(filter(None, map(os.path.basename, contents)))
         wanted = ['foo-0.1-py%s.%s.egg-info' % sys.version_info[:2], 'foo.py']
         if not sys.dont_write_bytecode:
-            wanted.append('foo.%s.pyc' % sys.implementation.cache_tag)
+            wanted.append(f'foo.{sys.implementation.cache_tag}.pyc')
         self.assertEqual(contents, sorted(wanted))
 
 

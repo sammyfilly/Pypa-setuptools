@@ -88,7 +88,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
             sys.stdout = old_stdout
 
         if ALREADY_TESTED:
-            self.skipTest('Already tested in %s' % ALREADY_TESTED)
+            self.skipTest(f'Already tested in {ALREADY_TESTED}')
         else:
             ALREADY_TESTED = type(self).__name__
 
@@ -219,7 +219,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
         # make sure cmd.library_dirs is turned into a list
         # if it's a string
         cmd = self.build_ext(dist)
-        cmd.library_dirs = 'my_lib_dir%sother_lib_dir' % os.pathsep
+        cmd.library_dirs = f'my_lib_dir{os.pathsep}other_lib_dir'
         cmd.finalize_options()
         self.assertIn('my_lib_dir', cmd.library_dirs)
         self.assertIn('other_lib_dir', cmd.library_dirs)
@@ -227,7 +227,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
         # make sure rpath is turned into a list
         # if it's a string
         cmd = self.build_ext(dist)
-        cmd.rpath = 'one%stwo' % os.pathsep
+        cmd.rpath = f'one{os.pathsep}two'
         cmd.finalize_options()
         self.assertEqual(cmd.rpath, ['one', 'two'])
 
@@ -428,14 +428,14 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
         cmd.distribution.package_dir = {'': 'src'}
         cmd.distribution.packages = ['lxml', 'lxml.html']
         curdir = os.getcwd()
-        wanted = os.path.join(curdir, 'src', 'lxml', 'etree' + ext)
+        wanted = os.path.join(curdir, 'src', 'lxml', f'etree{ext}')
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEqual(wanted, path)
 
         # building lxml.etree not inplace
         cmd.inplace = 0
         cmd.build_lib = os.path.join(curdir, 'tmpdir')
-        wanted = os.path.join(curdir, 'tmpdir', 'lxml', 'etree' + ext)
+        wanted = os.path.join(curdir, 'tmpdir', 'lxml', f'etree{ext}')
         path = cmd.get_ext_fullpath('lxml.etree')
         self.assertEqual(wanted, path)
 
@@ -444,13 +444,13 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
         build_py.package_dir = {}
         cmd.distribution.packages = ['twisted', 'twisted.runner.portmap']
         path = cmd.get_ext_fullpath('twisted.runner.portmap')
-        wanted = os.path.join(curdir, 'tmpdir', 'twisted', 'runner', 'portmap' + ext)
+        wanted = os.path.join(curdir, 'tmpdir', 'twisted', 'runner', f'portmap{ext}')
         self.assertEqual(wanted, path)
 
         # building twisted.runner.portmap inplace
         cmd.inplace = 1
         path = cmd.get_ext_fullpath('twisted.runner.portmap')
-        wanted = os.path.join(curdir, 'twisted', 'runner', 'portmap' + ext)
+        wanted = os.path.join(curdir, 'twisted', 'runner', f'portmap{ext}')
         self.assertEqual(wanted, path)
 
     @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
@@ -470,11 +470,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == 'darwin', 'test only relevant for MacOSX')
     def test_deployment_target_higher_ok(self):
-        # Issue 9516: Test that an extension module can be compiled with a
-        # deployment target higher than that of the interpreter: the ext
-        # module may depend on some newer OS feature.
-        deptarget = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        if deptarget:
+        if deptarget := sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET'):
             # increment the minor version number (i.e. 10.6 -> 10.7)
             deptarget = [int(x) for x in deptarget.split('.')]
             deptarget[-1] += 1
@@ -514,7 +510,7 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
 
         # get the deployment target that the interpreter was built with
         target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
-        target = tuple(map(int, target.split('.')[0:2]))
+        target = tuple(map(int, target.split('.')[:2]))
         # format the target value as defined in the Apple
         # Availability Macros.  We can't use the macro names since
         # at least one value we test with will not exist yet.
@@ -523,15 +519,9 @@ class BuildExtTestCase(TempdirManager, LoggingSilencer, unittest.TestCase):
             target = '%02d%01d0' % target
         else:
             # for 10.10 and beyond -> "10nn00"
-            if len(target) >= 2:
-                target = '%02d%02d00' % target
-            else:
-                # 11 and later can have no minor version (11 instead of 11.0)
-                target = '%02d0000' % target
+            target = '%02d%02d00' % target if len(target) >= 2 else '%02d0000' % target
         deptarget_ext = Extension(
-            'deptarget',
-            [deptarget_c],
-            extra_compile_args=['-DTARGET=%s' % (target,)],
+            'deptarget', [deptarget_c], extra_compile_args=[f'-DTARGET={target}']
         )
         dist = Distribution({'name': 'deptarget', 'ext_modules': [deptarget_ext]})
         dist.package_dir = self.tmp_dir

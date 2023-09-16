@@ -14,7 +14,7 @@ from distutils.tests import support
 
 
 class SpawnTestCase(support.TempdirManager, support.LoggingSilencer, unittest.TestCase):
-    @unittest.skipUnless(os.name in ('nt', 'posix'), 'Runs only under posix or nt')
+    @unittest.skipUnless(os.name in {'nt', 'posix'}, 'Runs only under posix or nt')
     def test_spawn(self):
         tmpdir = self.mkdtemp()
 
@@ -47,7 +47,7 @@ class SpawnTestCase(support.TempdirManager, support.LoggingSilencer, unittest.Te
             program_noeext = os_helper.TESTFN
             # Give the temporary program an ".exe" suffix for all.
             # It's needed on Windows and not harmful on other platforms.
-            program = program_noeext + ".exe"
+            program = f"{program_noeext}.exe"
 
             filename = os.path.join(tmp_dir, program)
             with open(filename, "wb"):
@@ -69,7 +69,7 @@ class SpawnTestCase(support.TempdirManager, support.LoggingSilencer, unittest.Te
                 self.assertEqual(rv, program)
 
             # test non-existent program
-            dont_exist_program = "dontexist_" + program
+            dont_exist_program = f"dontexist_{program}"
             rv = find_executable(dont_exist_program, path=tmp_dir)
             self.assertIsNone(rv)
 

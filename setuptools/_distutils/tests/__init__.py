@@ -27,7 +27,7 @@ def test_suite():
     suite = unittest.TestSuite()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
-            modname = "distutils.tests." + fn[:-3]
+            modname = f"distutils.tests.{fn[:-3]}"
             # bpo-40055: Save/restore warnings filters to leave them unchanged.
             # Importing tests imports docutils which imports pkg_resources
             # which adds a warnings filter.

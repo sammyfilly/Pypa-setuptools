@@ -82,7 +82,7 @@ class CheckTestCase(support.LoggingSilencer, support.TempdirManager, unittest.Te
             # (the spec allows these fields to take the form "Name <email>")
             metadata = {
                 'url': 'xxx',
-                kind + '_email': 'Name <name@email.com>',
+                f'{kind}_email': 'Name <name@email.com>',
                 'name': 'xxx',
                 'version': 'xxx',
             }
@@ -90,13 +90,13 @@ class CheckTestCase(support.LoggingSilencer, support.TempdirManager, unittest.Te
             self.assertEqual(cmd._warnings, 0)
 
             # the check should not warn if only email is given
-            metadata[kind + '_email'] = 'name@email.com'
+            metadata[f'{kind}_email'] = 'name@email.com'
             cmd = self._run(metadata)
             self.assertEqual(cmd._warnings, 0)
 
             # the check should not warn if only the name is given
             metadata[kind] = "Name"
-            del metadata[kind + '_email']
+            del metadata[f'{kind}_email']
             cmd = self._run(metadata)
             self.assertEqual(cmd._warnings, 0)
 
@@ -154,8 +154,7 @@ class CheckTestCase(support.LoggingSilencer, support.TempdirManager, unittest.Te
     def test_check_restructuredtext_with_syntax_highlight(self):
         # Don't fail if there is a `code` or `code-block` directive
 
-        example_rst_docs = []
-        example_rst_docs.append(
+        example_rst_docs = [
             textwrap.dedent(
                 """\
             Here's some code:
@@ -166,7 +165,7 @@ class CheckTestCase(support.LoggingSilencer, support.TempdirManager, unittest.Te
                     pass
             """
             )
-        )
+        ]
         example_rst_docs.append(
             textwrap.dedent(
                 """\

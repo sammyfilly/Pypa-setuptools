@@ -148,7 +148,7 @@ class bdist_wininst(Command):
                     break
             else:
                 raise DistutilsOptionError(
-                    "install_script '%s' not found in scripts" % self.install_script
+                    f"install_script '{self.install_script}' not found in scripts"
                 )
 
     def run(self):
@@ -185,17 +185,17 @@ class bdist_wininst(Command):
             if not target_version:
                 assert self.skip_build, "Should have already checked this"
                 target_version = '%d.%d' % sys.version_info[:2]
-            plat_specifier = ".%s-%s" % (self.plat_name, target_version)
+            plat_specifier = f".{self.plat_name}-{target_version}"
             build = self.get_finalized_command('build')
-            build.build_lib = os.path.join(build.build_base, 'lib' + plat_specifier)
+            build.build_lib = os.path.join(build.build_base, f'lib{plat_specifier}')
 
         # Use a custom scheme for the zip-file, because we have to decide
         # at installation time which scheme to use.
         for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
             value = key.upper()
             if key == 'headers':
-                value = value + '/Include/$dist_name'
-            setattr(install, 'install_' + key, value)
+                value = f'{value}/Include/$dist_name'
+            setattr(install, f'install_{key}', value)
 
         log.info("installing to %s", self.bdist_dir)
         install.ensure_finalized()
@@ -260,31 +260,28 @@ class bdist_wininst(Command):
             data = getattr(metadata, name, "")
             if data:
                 info = info + ("\n    %s: %s" % (name.capitalize(), escape(data)))
-                lines.append("%s=%s" % (name, escape(data)))
+                lines.append(f"{name}={escape(data)}")
 
         # The [setup] section contains entries controlling
         # the installer runtime.
         lines.append("\n[Setup]")
         if self.install_script:
-            lines.append("install_script=%s" % self.install_script)
-        lines.append("info=%s" % escape(info))
+            lines.append(f"install_script={self.install_script}")
+        lines.append(f"info={escape(info)}")
         lines.append("target_compile=%d" % (not self.no_target_compile))
         lines.append("target_optimize=%d" % (not self.no_target_optimize))
         if self.target_version:
-            lines.append("target_version=%s" % self.target_version)
+            lines.append(f"target_version={self.target_version}")
         if self.user_access_control:
-            lines.append("user_access_control=%s" % self.user_access_control)
+            lines.append(f"user_access_control={self.user_access_control}")
 
         title = self.title or self.distribution.get_fullname()
-        lines.append("title=%s" % escape(title))
+        lines.append(f"title={escape(title)}")
         import time
         import distutils
 
-        build_info = "Built %s with distutils-%s" % (
-            time.ctime(time.time()),
-            distutils.__version__,
-        )
-        lines.append("build_info=%s" % build_info)
+        build_info = f"Built {time.ctime(time.time())} with distutils-{distutils.__version__}"
+        lines.append(f"build_info={build_info}")
         return "\n".join(lines)
 
     def create_exe(self, arcname, fullname, bitmap=None):
@@ -295,7 +292,7 @@ class bdist_wininst(Command):
         cfgdata = self.get_inidata()
 
         installer_name = self.get_installer_filename(fullname)
-        self.announce("creating %s" % installer_name)
+        self.announce(f"creating {installer_name}")
 
         if bitmap:
             with open(bitmap, "rb") as f:
@@ -343,19 +340,14 @@ class bdist_wininst(Command):
                 file.write(f.read())
 
     def get_installer_filename(self, fullname):
-        # Factored out to allow overriding in subclasses
-        if self.target_version:
-            # if we create an installer for a specific python version,
-            # it's better to include this in the name
-            installer_name = os.path.join(
+        return (
+            os.path.join(
                 self.dist_dir,
-                "%s.%s-py%s.exe" % (fullname, self.plat_name, self.target_version),
+                f"{fullname}.{self.plat_name}-py{self.target_version}.exe",
             )
-        else:
-            installer_name = os.path.join(
-                self.dist_dir, "%s.%s.exe" % (fullname, self.plat_name)
-            )
-        return installer_name
+            if self.target_version
+            else os.path.join(self.dist_dir, f"{fullname}.{self.plat_name}.exe")
+        )
 
     def get_exe_bytes(self):
         # If a target-version other than the current version has been
@@ -395,7 +387,7 @@ class bdist_wininst(Command):
                 # as far as we know, CRT is binary compatible based on
                 # the first field, so assume 'x.0' until proven otherwise
                 major = CRT_ASSEMBLY_VERSION.partition('.')[0]
-                bv = major + '.0'
+                bv = f'{major}.0'
 
         # wininst-x.y.exe is in the same directory as this file
         directory = os.path.dirname(__file__)
@@ -410,7 +402,7 @@ class bdist_wininst(Command):
         else:
             sfix = ''
 
-        filename = os.path.join(directory, "wininst-%s%s.exe" % (bv, sfix))
+        filename = os.path.join(directory, f"wininst-{bv}{sfix}.exe")
         f = open(filename, "rb")
         try:
             return f.read()

@@ -83,12 +83,10 @@ class MultiplexedPath(abc.Traversable):
         return False
 
     def joinpath(self, child):
-        # first try to find child in current paths
-        for file in self.iterdir():
-            if file.name == child:
-                return file
-        # if it does not exist, construct it with the first path
-        return self._paths[0] / child
+        return next(
+            (file for file in self.iterdir() if file.name == child),
+            self._paths[0] / child,
+        )
 
     __truediv__ = joinpath
 
