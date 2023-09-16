@@ -72,7 +72,7 @@ if include_windows_files:
     package_data.setdefault('setuptools', []).extend(['*.exe'])
     package_data.setdefault('setuptools.command', []).extend(['*.xml'])
 
-needs_wheel = set(['release', 'bdist_wheel']).intersection(sys.argv)
+needs_wheel = {'release', 'bdist_wheel'}.intersection(sys.argv)
 wheel = ['wheel'] if needs_wheel else []
 
 
@@ -111,7 +111,7 @@ setup_params = dict(
     entry_points={
         "distutils.commands": [
             "%(cmd)s = setuptools.command.%(cmd)s:%(cmd)s" % locals()
-            for cmd in read_commands()
+            for _ in read_commands()
         ],
         "distutils.setup_keywords": [
             "eager_resources        = setuptools.dist:assert_string_list",
@@ -150,10 +150,12 @@ setup_params = dict(
             "dependency_links.txt = setuptools.command.egg_info:overwrite_arg",
         ],
         "console_scripts": list(_gen_console_scripts()),
-        "setuptools.installation":
-            ['eggsecutable = setuptools.command.easy_install:bootstrap'],
+        "setuptools.installation": [
+            'eggsecutable = setuptools.command.easy_install:bootstrap'
+        ],
     },
-    classifiers=textwrap.dedent("""
+    classifiers=textwrap.dedent(
+        """
         Development Status :: 5 - Production/Stable
         Intended Audience :: Developers
         License :: OSI Approved :: MIT License
@@ -169,10 +171,13 @@ setup_params = dict(
         Topic :: System :: Archiving :: Packaging
         Topic :: System :: Systems Administration
         Topic :: Utilities
-        """).strip().splitlines(),
+        """
+    )
+    .strip()
+    .splitlines(),
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     extras_require={
-        "ssl:sys_platform=='win32'": "wincertstore==0.2",
+        "ssl:sys_platform=='win32'": "wincertstore==0.2.1",
         "certs": "certifi==2016.9.26",
     },
     dependency_links=[
@@ -184,8 +189,7 @@ setup_params = dict(
         ),
     ],
     scripts=[],
-    setup_requires=[
-    ] + wheel,
+    setup_requires=[] + wheel,
 )
 
 if __name__ == '__main__':
