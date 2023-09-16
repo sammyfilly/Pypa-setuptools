@@ -66,7 +66,7 @@ if include_windows_files:
     package_data.setdefault('setuptools', []).extend(['*.exe'])
     package_data.setdefault('setuptools.command', []).extend(['*.xml'])
 
-needs_wheel = set(['release', 'bdist_wheel']).intersection(sys.argv)
+needs_wheel = {'release', 'bdist_wheel'}.intersection(sys.argv)
 wheel = ['wheel'] if needs_wheel else []
 
 
@@ -87,7 +87,7 @@ setup_params = dict(
     entry_points={
         "distutils.commands": [
             "%(cmd)s = setuptools.command.%(cmd)s:%(cmd)s" % locals()
-            for cmd in read_commands()
+            for _ in read_commands()
         ],
         "setuptools.finalize_distribution_options": [
             "parent_finalize = setuptools.dist:_Distribution.finalize_options",
@@ -133,8 +133,9 @@ setup_params = dict(
             "dependency_links.txt = setuptools.command.egg_info:overwrite_arg",
         ],
         "console_scripts": list(_gen_console_scripts()),
-        "setuptools.installation":
-            ['eggsecutable = setuptools.command.easy_install:bootstrap'],
+        "setuptools.installation": [
+            'eggsecutable = setuptools.command.easy_install:bootstrap'
+        ],
     },
     dependency_links=[
         pypi_link(
@@ -144,8 +145,7 @@ setup_params = dict(
             'wincertstore-0.2.zip#md5=ae728f2f007185648d0c7a8679b361e2',
         ),
     ],
-    setup_requires=[
-    ] + wheel,
+    setup_requires=[] + wheel,
 )
 
 if __name__ == '__main__':

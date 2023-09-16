@@ -62,12 +62,10 @@ def posix(path):
 def decompose(path):
     if isinstance(path, six.text_type):
         return unicodedata.normalize('NFD', path)
-    try:
+    with contextlib.suppress(UnicodeError):
         path = path.decode('utf-8')
         path = unicodedata.normalize('NFD', path)
         path = path.encode('utf-8')
-    except UnicodeError:
-        pass  # Not UTF-8
     return path
 
 
@@ -323,10 +321,8 @@ class TestSdistTest:
         # Add UTF-8 filename to manifest
         filename = os.path.join(b'sdist_test', Filenames.utf_8)
         cmd.manifest = os.path.join('sdist_test.egg-info', 'SOURCES.txt')
-        manifest = open(cmd.manifest, 'ab')
-        manifest.write(b'\n' + filename)
-        manifest.close()
-
+        with open(cmd.manifest, 'ab') as manifest:
+            manifest.write(b'\n' + filename)
         # The file must exist to be included in the filelist
         open(filename, 'w').close()
 
@@ -356,10 +352,8 @@ class TestSdistTest:
         # Add Latin-1 filename to manifest
         filename = os.path.join(b'sdist_test', Filenames.latin_1)
         cmd.manifest = os.path.join('sdist_test.egg-info', 'SOURCES.txt')
-        manifest = open(cmd.manifest, 'ab')
-        manifest.write(b'\n' + filename)
-        manifest.close()
-
+        with open(cmd.manifest, 'ab') as manifest:
+            manifest.write(b'\n' + filename)
         # The file must exist to be included in the filelist
         open(filename, 'w').close()
 
@@ -397,15 +391,11 @@ class TestSdistTest:
                 if fs_enc == 'cp1252':
                     # Python 3 mangles the UTF-8 filename
                     filename = filename.decode('cp1252')
-                    assert filename in cmd.filelist.files
                 else:
                     filename = filename.decode('mbcs')
-                    assert filename in cmd.filelist.files
             else:
                 filename = filename.decode('utf-8')
-                assert filename in cmd.filelist.files
-        else:
-            assert filename in cmd.filelist.files
+        assert filename in cmd.filelist.files
 
     @fail_on_latin1_encoded_filenames
     def test_sdist_with_latin1_encoded_filename(self):

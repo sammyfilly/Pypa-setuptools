@@ -45,7 +45,7 @@ class IndexServer(BaseHTTPServer.HTTPServer):
 
     def base_url(self):
         port = self.server_port
-        return 'http://127.0.0.1:%s/setuptools/tests/indexes/' % port
+        return f'http://127.0.0.1:{port}/setuptools/tests/indexes/'
 
 
 class RequestRecorder(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -74,11 +74,11 @@ class MockServer(BaseHTTPServer.HTTPServer, threading.Thread):
 
     @property
     def netloc(self):
-        return 'localhost:%s' % self.server_port
+        return f'localhost:{self.server_port}'
 
     @property
     def url(self):
-        return 'http://%s/' % self.netloc
+        return f'http://{self.netloc}/'
 
 
 def path_to_url(path, authority=None):
@@ -86,6 +86,5 @@ def path_to_url(path, authority=None):
     path = os.path.normpath(os.path.abspath(path))
     base = 'file:'
     if authority is not None:
-        base += '//' + authority
-    url = urljoin(base, pathname2url(path))
-    return url
+        base += f'//{authority}'
+    return urljoin(base, pathname2url(path))
