@@ -3,10 +3,8 @@
 Distutils setup file, used to install or test 'setuptools'
 """
 
-import io
 import os
 import sys
-import textwrap
 
 import setuptools
 
@@ -32,26 +30,6 @@ def read_commands():
         exec(init_file.read(), command_ns)
     return command_ns['__all__']
 
-
-def _gen_console_scripts():
-    yield "easy_install = setuptools.command.easy_install:main"
-
-    # Gentoo distributions manage the python-version-specific scripts
-    # themselves, so those platforms define an environment variable to
-    # suppress the creation of the version-specific scripts.
-    var_names = (
-        'SETUPTOOLS_DISABLE_VERSIONED_EASY_INSTALL_SCRIPT',
-        'DISTRIBUTE_DISABLE_VERSIONED_EASY_INSTALL_SCRIPT',
-    )
-    if any(os.environ.get(var) not in (None, "", "0") for var in var_names):
-        return
-    tmpl = "easy_install-{shortver} = setuptools.command.easy_install:main"
-    yield tmpl.format(shortver=sys.version[:3])
-
-
-readme_path = os.path.join(here, 'README.rst')
-with io.open(readme_path, encoding='utf-8') as readme_file:
-    long_description = readme_file.read()
 
 package_data = dict(
     setuptools=['script (dev).tmpl', 'script.tmpl', 'site-patch.py'],
@@ -88,26 +66,8 @@ def pypi_link(pkg_filename):
 
 
 setup_params = dict(
-    name="setuptools",
-    version="40.7.3",
-    description=(
-        "Easily download, build, install, upgrade, and uninstall "
-        "Python packages"
-    ),
-    author="Python Packaging Authority",
-    author_email="distutils-sig@python.org",
-    long_description=long_description,
-    long_description_content_type='text/x-rst; charset=UTF-8',
-    keywords="CPAN PyPI distutils eggs package management",
-    url="https://github.com/pypa/setuptools",
-    project_urls={
-        "Documentation": "https://setuptools.readthedocs.io/",
-    },
     src_root=None,
-    packages=setuptools.find_packages(exclude=['*.tests']),
     package_data=package_data,
-    py_modules=['easy_install'],
-    zip_safe=True,
     entry_points={
         "distutils.commands": [
             "%(cmd)s = setuptools.command.%(cmd)s:%(cmd)s" % locals()
@@ -149,31 +109,6 @@ setup_params = dict(
             "depends.txt = setuptools.command.egg_info:warn_depends_obsolete",
             "dependency_links.txt = setuptools.command.egg_info:overwrite_arg",
         ],
-        "console_scripts": list(_gen_console_scripts()),
-        "setuptools.installation":
-            ['eggsecutable = setuptools.command.easy_install:bootstrap'],
-    },
-    classifiers=textwrap.dedent("""
-        Development Status :: 5 - Production/Stable
-        Intended Audience :: Developers
-        License :: OSI Approved :: MIT License
-        Operating System :: OS Independent
-        Programming Language :: Python :: 2
-        Programming Language :: Python :: 2.7
-        Programming Language :: Python :: 3
-        Programming Language :: Python :: 3.4
-        Programming Language :: Python :: 3.5
-        Programming Language :: Python :: 3.6
-        Programming Language :: Python :: 3.7
-        Topic :: Software Development :: Libraries :: Python Modules
-        Topic :: System :: Archiving :: Packaging
-        Topic :: System :: Systems Administration
-        Topic :: Utilities
-        """).strip().splitlines(),
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
-    extras_require={
-        "ssl:sys_platform=='win32'": "wincertstore==0.2",
-        "certs": "certifi==2016.9.26",
     },
     dependency_links=[
         pypi_link(
@@ -183,7 +118,6 @@ setup_params = dict(
             'wincertstore-0.2.zip#md5=ae728f2f007185648d0c7a8679b361e2',
         ),
     ],
-    scripts=[],
     setup_requires=[
     ] + wheel,
 )

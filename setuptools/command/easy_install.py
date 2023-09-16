@@ -73,7 +73,7 @@ warnings.filterwarnings("default", category=pkg_resources.PEP440Warning)
 
 __all__ = [
     'samefile', 'easy_install', 'PthDistributions', 'extract_wininst_cfg',
-    'main', 'get_exe_prefixes',
+    'get_exe_prefixes',
 ]
 
 
@@ -241,7 +241,7 @@ class easy_install(Command):
         """
         Render the Setuptools version and installation details, then exit.
         """
-        ver = sys.version[:3]
+        ver = '{}.{}'.format(*sys.version_info)
         dist = get_distribution('setuptools')
         tmpl = 'setuptools {dist.version} from {dist.location} (Python {ver})'
         print(tmpl.format(**locals()))
@@ -410,7 +410,13 @@ class easy_install(Command):
         ]
         self._expand_attrs(dirs)
 
-    def run(self):
+    def run(self, show_deprecation=True):
+        if show_deprecation:
+            self.announce(
+                "WARNING: The easy_install command is deprecated "
+                "and will be removed in a future version."
+                , log.WARN,
+            )
         if self.verbose != self.distribution.verbose:
             log.set_verbosity(self.verbose)
         try:
@@ -1180,8 +1186,7 @@ class easy_install(Command):
         # to the setup.cfg file.
         ei_opts = self.distribution.get_option_dict('easy_install').copy()
         fetch_directives = (
-            'find_links', 'site_dirs', 'index_url', 'optimize',
-            'site_dirs', 'allow_hosts',
+            'find_links', 'site_dirs', 'index_url', 'optimize', 'allow_hosts',
         )
         fetch_options = {}
         for key, val in ei_opts.items():
@@ -1412,7 +1417,7 @@ def get_site_dirs():
                     os.path.join(
                         prefix,
                         "lib",
-                        "python" + sys.version[:3],
+                        "python{}.{}".format(*sys.version_info),
                         "site-packages",
                     ),
                     os.path.join(prefix, "lib", "site-python"),
@@ -1433,7 +1438,7 @@ def get_site_dirs():
                             home,
                             'Library',
                             'Python',
-                            sys.version[:3],
+                            '{}.{}'.format(*sys.version_info),
                             'site-packages',
                         )
                         sitedirs.append(home_sp)
@@ -2283,59 +2288,6 @@ def current_umask():
     os.umask(tmp)
     return tmp
 
-
-def bootstrap():
-    # This function is called when setuptools*.egg is run using /bin/sh
-    import setuptools
-
-    argv0 = os.path.dirname(setuptools.__path__[0])
-    sys.argv[0] = argv0
-    sys.argv.append(argv0)
-    main()
-
-
-def main(argv=None, **kw):
-    from setuptools import setup
-    from setuptools.dist import Distribution
-
-    class DistributionWithoutHelpCommands(Distribution):
-        common_usage = ""
-
-        def _show_help(self, *args, **kw):
-            with _patch_usage():
-                Distribution._show_help(self, *args, **kw)
-
-    if argv is None:
-        argv = sys.argv[1:]
-
-    with _patch_usage():
-        setup(
-            script_args=['-q', 'easy_install', '-v'] + argv,
-            script_name=sys.argv[0] or 'easy_install',
-            distclass=DistributionWithoutHelpCommands,
-            **kw
-        )
-
-
-@contextlib.contextmanager
-def _patch_usage():
-    import distutils.core
-    USAGE = textwrap.dedent("""
-        usage: %(script)s [options] requirement_or_url ...
-           or: %(script)s --help
-        """).lstrip()
-
-    def gen_usage(script_name):
-        return USAGE % dict(
-            script=os.path.basename(script_name),
-        )
-
-    saved = distutils.core.gen_usage
-    distutils.core.gen_usage = gen_usage
-    try:
-        yield
-    finally:
-        distutils.core.gen_usage = saved
 
 class EasyInstallDeprecationWarning(SetuptoolsDeprecationWarning):
     """Class for warning about deprecations in EasyInstall in SetupTools. Not ignored by default, unlike DeprecationWarning."""
