@@ -153,7 +153,7 @@ class DistributionTestCase(
         with mock.patch.multiple(sys, prefix='/a', base_prefix='/b') as values:
             d = self.create_distribution([TESTFN])
 
-        for key in result_dict.keys():
+        for key in result_dict:
             self.assertNotIn(key, d.command_options.get('install', {}))
 
     def test_command_packages_configfile(self):
@@ -472,11 +472,7 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard, unittest.Te
     def test_custom_pydistutils(self):
         # fixes #2166
         # make sure pydistutils.cfg is found
-        if os.name == 'posix':
-            user_filename = ".pydistutils.cfg"
-        else:
-            user_filename = "pydistutils.cfg"
-
+        user_filename = ".pydistutils.cfg" if os.name == 'posix' else "pydistutils.cfg"
         temp_dir = self.mkdtemp()
         user_filename = os.path.join(temp_dir, user_filename)
         f = open(user_filename, 'w')

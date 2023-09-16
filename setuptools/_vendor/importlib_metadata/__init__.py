@@ -114,8 +114,7 @@ class Sectioned:
         lines = filter(filter_, map(str.strip, text.splitlines()))
         name = None
         for value in lines:
-            section_match = value.startswith('[') and value.endswith(']')
-            if section_match:
+            if section_match := value.startswith('[') and value.endswith(']'):
                 name = value.strip('[]')
                 continue
             yield Pair(name, value)
@@ -472,9 +471,7 @@ class SelectableGroups(Deprecated, dict):
         return self._all.names
 
     def select(self, **params):
-        if not params:
-            return self
-        return self._all.select(**params)
+        return self if not params else self._all.select(**params)
 
 
 class PackagePath(pathlib.PurePosixPath):
@@ -894,7 +891,7 @@ class MetadataPathFinder(NullFinder, DistributionFinder):
             path.search(prepared) for path in map(FastPath, paths)
         )
 
-    def invalidate_caches(cls):
+    def invalidate_caches(self):
         FastPath.__new__.cache_clear()
 
 

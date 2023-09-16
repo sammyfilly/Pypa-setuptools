@@ -25,18 +25,18 @@ class BuildTestCase(support.TempdirManager, support.LoggingSilencer, unittest.Te
         # build_platlib is 'build/lib.platform-cache_tag[-pydebug]'
         # examples:
         #   build/lib.macosx-10.3-i386-cpython39
-        plat_spec = '.%s-%s' % (cmd.plat_name, sys.implementation.cache_tag)
+        plat_spec = f'.{cmd.plat_name}-{sys.implementation.cache_tag}'
         if hasattr(sys, 'gettotalrefcount'):
             self.assertTrue(cmd.build_platlib.endswith('-pydebug'))
             plat_spec += '-pydebug'
-        wanted = os.path.join(cmd.build_base, 'lib' + plat_spec)
+        wanted = os.path.join(cmd.build_base, f'lib{plat_spec}')
         self.assertEqual(cmd.build_platlib, wanted)
 
         # by default, build_lib = build_purelib
         self.assertEqual(cmd.build_lib, cmd.build_purelib)
 
         # build_temp is build/temp.<plat>
-        wanted = os.path.join(cmd.build_base, 'temp' + plat_spec)
+        wanted = os.path.join(cmd.build_base, f'temp{plat_spec}')
         self.assertEqual(cmd.build_temp, wanted)
 
         # build_scripts is build/scripts-x.x

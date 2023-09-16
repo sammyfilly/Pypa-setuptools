@@ -2,6 +2,7 @@
 
 Implements the Distutils 'install' command."""
 
+
 import sys
 import os
 import contextlib
@@ -84,7 +85,7 @@ if HAS_USER_SITE:
     }
 
 
-INSTALL_SCHEMES.update(fw.schemes)
+INSTALL_SCHEMES |= fw.schemes
 
 
 # The keys to an installation scheme; if any new types of files are to be
@@ -118,10 +119,7 @@ def _load_schemes():
 
 
 def _get_implementation():
-    if hasattr(sys, 'pypy_version_info'):
-        return 'PyPy'
-    else:
-        return 'Python'
+    return 'PyPy' if hasattr(sys, 'pypy_version_info') else 'Python'
 
 
 def _select_scheme(ob, name):
@@ -514,11 +512,11 @@ class install(Command):
             return
         from distutils.fancy_getopt import longopt_xlate
 
-        log.debug(msg + ":")
+        log.debug(f"{msg}:")
         for opt in self.user_options:
             opt_name = opt[0]
             if opt_name[-1] == "=":
-                opt_name = opt_name[0:-1]
+                opt_name = opt_name[:-1]
             if opt_name in self.negative_opt:
                 opt_name = self.negative_opt[opt_name]
                 opt_name = opt_name.translate(longopt_xlate)
@@ -569,9 +567,8 @@ class install(Command):
                 self.prefix = os.path.normpath(sys.prefix) + _prefix_addition
                 self.exec_prefix = os.path.normpath(sys.exec_prefix) + _prefix_addition
 
-            else:
-                if self.exec_prefix is None:
-                    self.exec_prefix = self.prefix
+            elif self.exec_prefix is None:
+                self.exec_prefix = self.prefix
 
             self.install_base = self.prefix
             self.install_platbase = self.exec_prefix
@@ -583,7 +580,7 @@ class install(Command):
             if self.install_userbase is None:
                 raise DistutilsPlatformError("User base directory is not specified")
             self.install_base = self.install_platbase = self.install_userbase
-            self.select_scheme(os.name + "_user")
+            self.select_scheme(f"{os.name}_user")
         elif self.home is not None:
             self.install_base = self.install_platbase = self.home
             self.select_scheme("posix_home")
@@ -596,7 +593,7 @@ class install(Command):
                 self.select_scheme(os.name)
             except KeyError:
                 raise DistutilsPlatformError(
-                    "I don't know how to install stuff on '%s'" % os.name
+                    f"I don't know how to install stuff on '{os.name}'"
                 )
 
     def select_scheme(self, name):
@@ -606,7 +603,7 @@ class install(Command):
         for attr in attrs:
             val = getattr(self, attr)
             if val is not None:
-                if os.name == 'posix' or os.name == 'nt':
+                if os.name in {'posix', 'nt'}:
                     val = os.path.expanduser(val)
                 val = subst_vars(val, self.config_vars)
                 setattr(self, attr, val)
@@ -632,7 +629,7 @@ class install(Command):
     def convert_paths(self, *names):
         """Call `convert_path` over `names`."""
         for name in names:
-            attr = "install_" + name
+            attr = f"install_{name}"
             setattr(self, attr, convert_path(getattr(self, attr)))
 
     def handle_extra_path(self):
@@ -673,7 +670,7 @@ class install(Command):
     def change_roots(self, *names):
         """Change the install directories pointed by name using root."""
         for name in names:
-            attr = "install_" + name
+            attr = f"install_{name}"
             setattr(self, attr, change_root(self.root, getattr(self, attr)))
 
     def create_home_path(self):
@@ -683,7 +680,7 @@ class install(Command):
         home = convert_path(os.path.expanduser("~"))
         for name, path in self.config_vars.items():
             if str(path).startswith(home) and not os.path.isdir(path):
-                self.debug_print("os.makedirs('%s', 0o700)" % path)
+                self.debug_print(f"os.makedirs('{path}', 0o700)")
                 os.makedirs(path, 0o700)
 
     # -- Command execution methods -------------------------------------
@@ -718,7 +715,7 @@ class install(Command):
             self.execute(
                 write_file,
                 (self.record, outputs),
-                "writing list of installed files to '%s'" % self.record,
+                f"writing list of installed files to '{self.record}'",
             )
 
         sys_path = map(os.path.normpath, sys.path)
@@ -740,13 +737,11 @@ class install(Command):
 
     def create_path_file(self):
         """Creates the .pth file"""
-        filename = os.path.join(self.install_libbase, self.path_file + ".pth")
+        filename = os.path.join(self.install_libbase, f"{self.path_file}.pth")
         if self.install_path_file:
-            self.execute(
-                write_file, (filename, [self.extra_dirs]), "creating %s" % filename
-            )
+            self.execute(write_file, (filename, [self.extra_dirs]), f"creating {filename}")
         else:
-            self.warn("path file '%s' not created" % filename)
+            self.warn(f"path file '{filename}' not created")
 
     # -- Reporting methods ---------------------------------------------
 
@@ -762,7 +757,7 @@ class install(Command):
                     outputs.append(filename)
 
         if self.path_file and self.install_path_file:
-            outputs.append(os.path.join(self.install_libbase, self.path_file + ".pth"))
+            outputs.append(os.path.join(self.install_libbase, f"{self.path_file}.pth"))
 
         return outputs
 

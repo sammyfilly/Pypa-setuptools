@@ -26,28 +26,24 @@ def _copy_file_contents(src, dst, buffer_size=16 * 1024):
         try:
             fsrc = open(src, 'rb')
         except OSError as e:
-            raise DistutilsFileError("could not open '%s': %s" % (src, e.strerror))
+            raise DistutilsFileError(f"could not open '{src}': {e.strerror}")
 
         if os.path.exists(dst):
             try:
                 os.unlink(dst)
             except OSError as e:
-                raise DistutilsFileError(
-                    "could not delete '%s': %s" % (dst, e.strerror)
-                )
+                raise DistutilsFileError(f"could not delete '{dst}': {e.strerror}")
 
         try:
             fdst = open(dst, 'wb')
         except OSError as e:
-            raise DistutilsFileError("could not create '%s': %s" % (dst, e.strerror))
+            raise DistutilsFileError(f"could not create '{dst}': {e.strerror}")
 
         while True:
             try:
                 buf = fsrc.read(buffer_size)
             except OSError as e:
-                raise DistutilsFileError(
-                    "could not read from '%s': %s" % (src, e.strerror)
-                )
+                raise DistutilsFileError(f"could not read from '{src}': {e.strerror}")
 
             if not buf:
                 break
@@ -55,9 +51,7 @@ def _copy_file_contents(src, dst, buffer_size=16 * 1024):
             try:
                 fdst.write(buf)
             except OSError as e:
-                raise DistutilsFileError(
-                    "could not write to '%s': %s" % (dst, e.strerror)
-                )
+                raise DistutilsFileError(f"could not write to '{dst}': {e.strerror}")
     finally:
         if fdst:
             fdst.close()
@@ -111,7 +105,7 @@ def copy_file(
 
     if not os.path.isfile(src):
         raise DistutilsFileError(
-            "can't copy '%s': doesn't exist or not a regular file" % src
+            f"can't copy '{src}': doesn't exist or not a regular file"
         )
 
     if os.path.isdir(dst):
@@ -128,7 +122,7 @@ def copy_file(
     try:
         action = _copy_action[link]
     except KeyError:
-        raise ValueError("invalid value '%s' for 'link' argument" % link)
+        raise ValueError(f"invalid value '{link}' for 'link' argument")
 
     if verbose >= 1:
         if os.path.basename(dst) == os.path.basename(src):
@@ -162,12 +156,12 @@ def copy_file(
     if preserve_mode or preserve_times:
         st = os.stat(src)
 
-        # According to David Ascher <da@ski.org>, utime() should be done
-        # before chmod() (at least under NT).
-        if preserve_times:
-            os.utime(dst, (st[ST_ATIME], st[ST_MTIME]))
-        if preserve_mode:
-            os.chmod(dst, S_IMODE(st[ST_MODE]))
+    # According to David Ascher <da@ski.org>, utime() should be done
+    # before chmod() (at least under NT).
+    if preserve_times:
+        os.utime(dst, (st[ST_ATIME], st[ST_MTIME]))
+    if preserve_mode:
+        os.chmod(dst, S_IMODE(st[ST_MODE]))
 
     return (dst, 1)
 
@@ -192,18 +186,18 @@ def move_file(src, dst, verbose=1, dry_run=0):
         return dst
 
     if not isfile(src):
-        raise DistutilsFileError("can't move '%s': not a regular file" % src)
+        raise DistutilsFileError(f"can't move '{src}': not a regular file")
 
     if isdir(dst):
         dst = os.path.join(dst, basename(src))
     elif exists(dst):
         raise DistutilsFileError(
-            "can't move '%s': destination '%s' already exists" % (src, dst)
+            f"can't move '{src}': destination '{dst}' already exists"
         )
 
     if not isdir(dirname(dst)):
         raise DistutilsFileError(
-            "can't move '%s': destination '%s' not a valid path" % (src, dst)
+            f"can't move '{src}': destination '{dst}' not a valid path"
         )
 
     copy_it = False
@@ -214,7 +208,7 @@ def move_file(src, dst, verbose=1, dry_run=0):
         if num == errno.EXDEV:
             copy_it = True
         else:
-            raise DistutilsFileError("couldn't move '%s' to '%s': %s" % (src, dst, msg))
+            raise DistutilsFileError(f"couldn't move '{src}' to '{dst}': {msg}")
 
     if copy_it:
         copy_file(src, dst, verbose=verbose)

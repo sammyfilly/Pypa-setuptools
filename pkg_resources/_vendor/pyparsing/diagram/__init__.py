@@ -55,7 +55,7 @@ class AnnotatedItem(railroad.Group):
     """
 
     def __init__(self, label: str, item):
-        super().__init__(item=item, label="[{}]".format(label) if label else label)
+        super().__init__(item=item, label=f"[{label}]" if label else label)
 
 
 class EditablePartial(Generic[T]):
@@ -453,11 +453,7 @@ def _to_diagram_element(
         ):
             # However, if this element has a useful custom name, and its child does not, we can pass it on to the child
             if exprs:
-                if not exprs[0].customName:
-                    propagated_name = name
-                else:
-                    propagated_name = None
-
+                propagated_name = name if not exprs[0].customName else None
                 return _to_diagram_element(
                     element.expr,
                     parent=parent,
@@ -476,17 +472,12 @@ def _to_diagram_element(
             # so we have to extract it into a new diagram.
             looked_up = lookup[el_id]
             looked_up.mark_for_extraction(el_id, lookup, name=name_hint)
-            ret = EditablePartial.from_call(railroad.NonTerminal, text=looked_up.name)
-            return ret
-
+            return EditablePartial.from_call(railroad.NonTerminal, text=looked_up.name)
         elif el_id in lookup.diagrams:
-            # If we have seen the element at least twice before, and have already extracted it into a subdiagram, we
-            # just put in a marker element that refers to the sub-diagram
-            ret = EditablePartial.from_call(
-                railroad.NonTerminal, text=lookup.diagrams[el_id].kwargs["name"]
+            return EditablePartial.from_call(
+                railroad.NonTerminal,
+                text=lookup.diagrams[el_id].kwargs["name"],
             )
-            return ret
-
     # Recursively convert child elements
     # Here we find the most relevant Railroad element for matching pyparsing Element
     # We use ``items=[]`` here to hold the place for where the child elements will go once created
@@ -495,7 +486,7 @@ def _to_diagram_element(
         # (all will have the same name, and resultsName)
         if not exprs:
             return None
-        if len(set((e.name, e.resultsName) for e in exprs)) == 1:
+        if len({(e.name, e.resultsName) for e in exprs}) == 1:
             ret = EditablePartial.from_call(
                 railroad.OneOrMore, item="", repeat=str(len(exprs))
             )
@@ -533,10 +524,6 @@ def _to_diagram_element(
         ret = EditablePartial.from_call(railroad.OneOrMore, item="")
     elif isinstance(element, pyparsing.ZeroOrMore):
         ret = EditablePartial.from_call(railroad.ZeroOrMore, item="")
-    elif isinstance(element, pyparsing.Group):
-        ret = EditablePartial.from_call(
-            railroad.Group, item=None, label=element_results_name
-        )
     elif isinstance(element, pyparsing.Empty) and not element.customName:
         # Skip unnamed "Empty" elements
         ret = None

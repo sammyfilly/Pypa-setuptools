@@ -139,9 +139,9 @@ def setup(**attrs):
         _setup_distribution = dist = klass(attrs)
     except DistutilsSetupError as msg:
         if 'name' not in attrs:
-            raise SystemExit("error in setup command: %s" % msg)
+            raise SystemExit(f"error in setup command: {msg}")
         else:
-            raise SystemExit("error in %s setup command: %s" % (attrs['name'], msg))
+            raise SystemExit(f"error in {attrs['name']} setup command: {msg}")
 
     if _setup_stop_after == "init":
         return dist
@@ -173,10 +173,7 @@ def setup(**attrs):
         return dist
 
     # And finally, run all the commands found on the command line.
-    if ok:
-        return run_commands(dist)
-
-    return dist
+    return run_commands(dist) if ok else dist
 
 
 # setup ()
@@ -194,17 +191,16 @@ def run_commands(dist):
     except KeyboardInterrupt:
         raise SystemExit("interrupted")
     except OSError as exc:
-        if DEBUG:
-            sys.stderr.write("error: %s\n" % (exc,))
-            raise
-        else:
-            raise SystemExit("error: %s" % (exc,))
+        if not DEBUG:
+            raise SystemExit(f"error: {exc}")
 
+        sys.stderr.write("error: %s\n" % (exc,))
+        raise
     except (DistutilsError, CCompilerError) as msg:
         if DEBUG:
             raise
         else:
-            raise SystemExit("error: " + str(msg))
+            raise SystemExit(f"error: {str(msg)}")
 
     return dist
 
