@@ -51,14 +51,10 @@ class BuildBackendCaller(BuildBackendBase):
     def __call__(self, name, *args, **kw):
         """Handles aribrary function invocations on the build backend."""
         os.chdir(self.cwd)
-        os.environ.update(self.env)
+        os.environ |= self.env
         mod = importlib.import_module(self.backend_name)
 
-        if self.backend_obj:
-            backend = getattr(mod, self.backend_obj)
-        else:
-            backend = mod
-
+        backend = getattr(mod, self.backend_obj) if self.backend_obj else mod
         return getattr(backend, name)(*args, **kw)
 
 
@@ -178,10 +174,10 @@ class TestBuildMetaBackend:
 
         build_files(files)
 
-        dist_dir = os.path.abspath('preexisting-' + build_type)
+        dist_dir = os.path.abspath(f'preexisting-{build_type}')
 
         build_backend = self.get_build_backend()
-        build_method = getattr(build_backend, 'build_' + build_type)
+        build_method = getattr(build_backend, f'build_{build_type}')
 
         # Build a first sdist/wheel.
         # Note: this also check the destination directory is
@@ -221,7 +217,7 @@ class TestBuildMetaBackend:
 
     @py2_only
     def test_prepare_metadata_for_build_wheel_with_str(self, build_backend):
-        dist_dir = os.path.abspath(str('pip-dist-info'))
+        dist_dir = os.path.abspath('pip-dist-info')
         os.makedirs(dist_dir)
 
         dist_info = build_backend.prepare_metadata_for_build_wheel(dist_dir)
@@ -292,7 +288,7 @@ class TestBuildMetaBackend:
         build_backend = self.get_build_backend()
         targz_path = build_backend.build_sdist("temp")
         with tarfile.open(os.path.join("temp", targz_path)) as tar:
-            assert not any('setup.py' in name for name in tar.getnames())
+            assert all('setup.py' not in name for name in tar.getnames())
 
     def test_build_sdist_builds_targz_even_if_zip_indicated(self, tmpdir_cwd):
         files = {

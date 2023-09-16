@@ -172,11 +172,11 @@ class _IndividualSpecifier(BaseSpecifier):
         return self._get_operator(self.operator)(item, self.version)
 
     def filter(self, iterable, prereleases=None):
-        yielded = False
         found_prereleases = []
 
         kw = {"prereleases": prereleases if prereleases is not None else True}
 
+        yielded = False
         # Attempt to iterate over all the values in the iterable and if any of
         # them match, yield them.
         for version in iterable:
@@ -186,12 +186,12 @@ class _IndividualSpecifier(BaseSpecifier):
                 # If our version is a prerelease, and we were not set to allow
                 # prereleases, then we'll store it for later incase nothing
                 # else matches this specifier.
-                if parsed_version.is_prerelease and not (
-                    prereleases or self.prereleases
+                if (
+                    parsed_version.is_prerelease
+                    and not prereleases
+                    and not self.prereleases
                 ):
                     found_prereleases.append(version)
-                # Either this is not a prerelease, or we should have been
-                # accepting prereleases from the beginning.
                 else:
                     yielded = True
                     yield version
@@ -200,8 +200,7 @@ class _IndividualSpecifier(BaseSpecifier):
         # any values, and if we have not and we have any prereleases stored up
         # then we will go ahead and yield the prereleases.
         if not yielded and found_prereleases:
-            for version in found_prereleases:
-                yield version
+            yield from found_prereleases
 
 
 class LegacySpecifier(_IndividualSpecifier):
@@ -539,8 +538,7 @@ _prefix_regex = re.compile(r"^([0-9]+)((?:a|b|c|rc)[0-9]+)$")
 def _version_split(version):
     result = []
     for item in version.split("."):
-        match = _prefix_regex.search(item)
-        if match:
+        if match := _prefix_regex.search(item):
             result.extend(match.groups())
         else:
             result.append(item)
@@ -661,12 +659,7 @@ class SpecifierSet(BaseSpecifier):
         # If we don't have any specifiers, and we don't have a forced value,
         # then we'll just return None since we don't know if this should have
         # pre-releases or not.
-        if not self._specs:
-            return None
-
-        # Otherwise we'll see if any of the given specifiers accept
-        # prereleases, if any of them do we'll return True, otherwise False.
-        return any(s.prereleases for s in self._specs)
+        return None if not self._specs else any(s.prereleases for s in self._specs)
 
     @prereleases.setter
     def prereleases(self, value):

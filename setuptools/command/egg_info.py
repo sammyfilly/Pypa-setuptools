@@ -46,19 +46,14 @@ def translate_pattern(glob):
     chunks = glob.split(os.path.sep)
 
     sep = re.escape(os.sep)
-    valid_char = '[^%s]' % (sep,)
+    valid_char = f'[^{sep}]'
 
     for c, chunk in enumerate(chunks):
         last_chunk = c == len(chunks) - 1
 
         # Chunks that are a literal ** are globstars. They match anything.
         if chunk == '**':
-            if last_chunk:
-                # Match anything if this is the last component
-                pat += '.*'
-            else:
-                # Match '(name/)*'
-                pat += '(?:%s+%s)*' % (valid_char, sep)
+            pat += '.*' if last_chunk else f'(?:{valid_char}+{sep})*'
             continue  # Break here as the whole path component has been handled
 
         # Find any special characters in the remainder
@@ -68,7 +63,7 @@ def translate_pattern(glob):
             char = chunk[i]
             if char == '*':
                 # Match any number of name characters
-                pat += valid_char + '*'
+                pat += f'{valid_char}*'
             elif char == '?':
                 # Match a name character
                 pat += valid_char
@@ -100,7 +95,7 @@ def translate_pattern(glob):
                         inner = inner[1:]
 
                     char_class += re.escape(inner)
-                    pat += '[%s]' % (char_class,)
+                    pat += f'[{char_class}]'
 
                     # Skip to the end ]
                     i = inner_i
@@ -209,8 +204,7 @@ class egg_info(InfoCommon, Command):
             )
         except ValueError:
             raise distutils.errors.DistutilsOptionError(
-                "Invalid distribution name or version syntax: %s-%s" %
-                (self.egg_name, self.egg_version)
+                f"Invalid distribution name or version syntax: {self.egg_name}-{self.egg_version}"
             )
 
         if self.egg_base is None:
@@ -218,7 +212,7 @@ class egg_info(InfoCommon, Command):
             self.egg_base = (dirs or {}).get('', os.curdir)
 
         self.ensure_dirname('egg_base')
-        self.egg_info = to_filename(self.egg_name) + '.egg-info'
+        self.egg_info = f'{to_filename(self.egg_name)}.egg-info'
         if self.egg_base != os.curdir:
             self.egg_info = os.path.join(self.egg_base, self.egg_info)
         if '-' in self.egg_name:
@@ -269,9 +263,8 @@ class egg_info(InfoCommon, Command):
         if six.PY3:
             data = data.encode("utf-8")
         if not self.dry_run:
-            f = open(filename, 'wb')
-            f.write(data)
-            f.close()
+            with open(filename, 'wb') as f:
+                f.write(data)
 
     def delete_file(self, filename):
         """Delete `filename` (if not a dry run) after announcing it"""
@@ -304,7 +297,7 @@ class egg_info(InfoCommon, Command):
         self.filelist = mm.filelist
 
     def check_broken_egg_info(self):
-        bei = self.egg_name + '.egg-info'
+        bei = f'{self.egg_name}.egg-info'
         if self.egg_base != os.curdir:
             bei = os.path.join(self.egg_base, bei)
         if os.path.exists(bei):
@@ -362,8 +355,7 @@ class FileList(_FileList):
                              pattern)
 
         elif action == 'recursive-include':
-            self.debug_print("recursive-include %s %s" %
-                             (dir, ' '.join(patterns)))
+            self.debug_print(f"recursive-include {dir} {' '.join(patterns)}")
             for pattern in patterns:
                 if not self.recursive_include(dir, pattern):
                     log.warn(("warning: no files found matching '%s' "
@@ -371,8 +363,7 @@ class FileList(_FileList):
                              pattern, dir)
 
         elif action == 'recursive-exclude':
-            self.debug_print("recursive-exclude %s %s" %
-                             (dir, ' '.join(patterns)))
+            self.debug_print(f"recursive-exclude {dir} {' '.join(patterns)}")
             for pattern in patterns:
                 if not self.recursive_exclude(dir, pattern):
                     log.warn(("warning: no previously-included files matching "
@@ -380,20 +371,19 @@ class FileList(_FileList):
                              pattern, dir)
 
         elif action == 'graft':
-            self.debug_print("graft " + dir_pattern)
+            self.debug_print(f"graft {dir_pattern}")
             if not self.graft(dir_pattern):
                 log.warn("warning: no directories found matching '%s'",
                          dir_pattern)
 
         elif action == 'prune':
-            self.debug_print("prune " + dir_pattern)
+            self.debug_print(f"prune {dir_pattern}")
             if not self.prune(dir_pattern):
                 log.warn(("no previously-included directories found "
                           "matching '%s'"), dir_pattern)
 
         else:
-            raise DistutilsInternalError(
-                "this cannot happen: invalid action '%s'" % action)
+            raise DistutilsInternalError(f"this cannot happen: invalid action '{action}'")
 
     def _remove_files(self, predicate):
         """
@@ -403,7 +393,7 @@ class FileList(_FileList):
         found = False
         for i in range(len(self.files) - 1, -1, -1):
             if predicate(self.files[i]):
-                self.debug_print(" removing " + self.files[i])
+                self.debug_print(f" removing {self.files[i]}")
                 del self.files[i]
                 found = True
         return found
@@ -497,7 +487,7 @@ class FileList(_FileList):
         # To avoid accidental trans-codings errors, first to unicode
         u_path = unicode_utils.filesys_decode(path)
         if u_path is None:
-            log.warn("'%s' in unexpected encoding -- skipping" % path)
+            log.warn(f"'{path}' in unexpected encoding -- skipping")
             return False
 
         # Must ensure utf-8 encodability
@@ -552,7 +542,7 @@ class manifest_maker(sdist):
 
         # Now _repairs should encodability, but not unicode
         files = [self._manifest_normalize(f) for f in self.filelist.files]
-        msg = "writing manifest file '%s'" % self.manifest
+        msg = f"writing manifest file '{self.manifest}'"
         self.execute(write_file, (self.manifest, files), msg)
 
     def warn(self, msg):
@@ -571,8 +561,7 @@ class manifest_maker(sdist):
         self.check_license()
         self.filelist.append(self.template)
         self.filelist.append(self.manifest)
-        rcfiles = list(walk_revctrl())
-        if rcfiles:
+        if rcfiles := list(walk_revctrl()):
             self.filelist.extend(rcfiles)
         elif os.path.exists(self.manifest):
             self.read_manifest()
@@ -591,8 +580,9 @@ class manifest_maker(sdist):
         self.filelist.prune(build.build_base)
         self.filelist.prune(base_dir)
         sep = re.escape(os.sep)
-        self.filelist.exclude_pattern(r'(^|' + sep + r')(RCS|CVS|\.svn)' + sep,
-                                      is_regex=1)
+        self.filelist.exclude_pattern(
+            f'(^|{sep}' + r')(RCS|CVS|\.svn)' + sep, is_regex=1
+        )
 
 
 def write_file(filename, contents):
@@ -686,7 +676,7 @@ def write_entries(cmd, basename, filename):
 
     if isinstance(ep, six.string_types) or ep is None:
         data = ep
-    elif ep is not None:
+    else:
         data = []
         for section, contents in sorted(ep.items()):
             if not isinstance(contents, six.string_types):
@@ -707,8 +697,7 @@ def get_pkg_info_revision():
     if os.path.exists('PKG-INFO'):
         with io.open('PKG-INFO') as f:
             for line in f:
-                match = re.match(r"Version:.*-r(\d+)\s*$", line)
-                if match:
+                if match := re.match(r"Version:.*-r(\d+)\s*$", line):
                     return int(match.group(1))
     return 0
 

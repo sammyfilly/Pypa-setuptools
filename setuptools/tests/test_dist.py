@@ -31,7 +31,7 @@ def test_dist_fetch_build_egg(tmpdir):
 
     def sdist_with_index(distname, version):
         dist_dir = index.mkdir(distname)
-        dist_sdist = '%s-%s.tar.gz' % (distname, version)
+        dist_sdist = f'{distname}-{version}.tar.gz'
         make_nspkg_sdist(str(dist_dir.join(dist_sdist)), distname, version)
         with dist_dir.join('index.html').open('w') as fp:
             fp.write(DALS(
@@ -41,6 +41,7 @@ def test_dist_fetch_build_egg(tmpdir):
                 </body></html>
                 '''
             ).format(dist_sdist=dist_sdist))
+
     sdist_with_index('barbazquux', '3.2.0')
     sdist_with_index('barbazquux-runner', '2.11.1')
     with tmpdir.join('setup.cfg').open('w') as fp:
@@ -150,11 +151,7 @@ def test_read_metadata(name, attrs):
     dist_class = metadata_out.__class__
 
     # Write to PKG_INFO and then load into a new metadata object
-    if six.PY2:
-        PKG_INFO = io.BytesIO()
-    else:
-        PKG_INFO = io.StringIO()
-
+    PKG_INFO = io.BytesIO() if six.PY2 else io.StringIO()
     metadata_out.write_pkg_file(PKG_INFO)
 
     PKG_INFO.seek(0)
@@ -266,9 +263,9 @@ def test_maintainer_author(name, attrs, tmpdir):
         val = attrs.get(dkey, None)
         if val is None:
             for line in pkg_lines:
-                assert not line.startswith(fkey + ':')
+                assert not line.startswith(f'{fkey}:')
         else:
-            line = '%s: %s' % (fkey, val)
+            line = f'{fkey}: {val}'
             assert line in pkg_lines_set
 
 
@@ -286,38 +283,38 @@ def test_provides_extras_deterministic_order():
 
    
 CHECK_PACKAGE_DATA_TESTS = (
-    # Valid.
-    ({
-        '': ['*.txt', '*.rst'],
-        'hello': ['*.msg'],
-    }, None),
-    # Not a dictionary.
-    ((
-        ('', ['*.txt', '*.rst']),
-        ('hello', ['*.msg']),
-    ), (
-        "'package_data' must be a dictionary mapping package"
-        " names to lists of string wildcard patterns"
-    )),
-    # Invalid key type.
-    ({
-        400: ['*.txt', '*.rst'],
-    }, (
-        "keys of 'package_data' dict must be strings (got 400)"
-    )),
-    # Invalid value type.
-    ({
-        'hello': str('*.msg'),
-    }, (
-        "\"values of 'package_data' dict\" must be a list of strings (got '*.msg')"
-    )),
-    # Invalid value type (generators are single use)
-    ({
-        'hello': (x for x in "generator"),
-    }, (
+    (
+        {
+            '': ['*.txt', '*.rst'],
+            'hello': ['*.msg'],
+        },
+        None,
+    ),
+    (
+        (
+            ('', ['*.txt', '*.rst']),
+            ('hello', ['*.msg']),
+        ),
+        (
+            "'package_data' must be a dictionary mapping package"
+            " names to lists of string wildcard patterns"
+        ),
+    ),
+    (
+        {
+            400: ['*.txt', '*.rst'],
+        },
+        ("keys of 'package_data' dict must be strings (got 400)"),
+    ),
+    (
+        {'hello': '*.msg'},
+        "\"values of 'package_data' dict\" must be a list of strings (got '*.msg')",
+    ),
+    (
+        {'hello': iter("generator")},
         "\"values of 'package_data' dict\" must be a list of strings "
-        "(got <generator object"
-    )),
+        "(got <generator object",
+    ),
 )
 
 
@@ -327,4 +324,4 @@ def test_check_package_data(package_data, expected_message):
         assert check_package_data(None, 'package_data', package_data) is None
     else:
         with pytest.raises(DistutilsSetupError, match=re.escape(expected_message)):
-            check_package_data(None, str('package_data'), package_data)
+            check_package_data(None, 'package_data', package_data)
