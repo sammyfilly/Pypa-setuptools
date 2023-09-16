@@ -83,12 +83,10 @@ def _get_pip_versions():
     if not six.PY34:
         network_versions.append('https://github.com/pypa/pip/archive/master.zip')
 
-    versions = [None] + [
+    return [None] + [
         pytest.param(v, **({} if network else {'marks': pytest.mark.skip}))
         for v in network_versions
     ]
-
-    return versions
 
 
 @pytest.mark.parametrize('pip_version', _get_pip_versions())
@@ -116,9 +114,9 @@ def test_pip_upgrade_from_source(pip_version, virtualenv):
     sdist = glob.glob(os.path.join(dist_dir, '*.zip'))[0]
     wheel = glob.glob(os.path.join(dist_dir, '*.whl'))[0]
     # Then update from wheel.
-    virtualenv.run('pip install ' + wheel)
+    virtualenv.run(f'pip install {wheel}')
     # And finally try to upgrade from source.
-    virtualenv.run('pip install --no-cache-dir --upgrade ' + sdist)
+    virtualenv.run(f'pip install --no-cache-dir --upgrade {sdist}')
 
 
 def _check_test_command_install_requirements(virtualenv, tmpdir):
@@ -129,9 +127,10 @@ def _check_test_command_install_requirements(virtualenv, tmpdir):
     virtualenv.run('python setup.py develop', cd=SOURCE_DIR)
 
     def sdist(distname, version):
-        dist_path = tmpdir.join('%s-%s.tar.gz' % (distname, version))
+        dist_path = tmpdir.join(f'{distname}-{version}.tar.gz')
         make_nspkg_sdist(str(dist_path), distname, version)
         return dist_path
+
     dependency_links = [
         str(dist_path)
         for dist_path in (

@@ -90,7 +90,7 @@ def build_wheel(extra_file_defs=None, **kwargs):
         ) % kwargs).encode('utf-8'),
     }
     if extra_file_defs:
-        file_defs.update(extra_file_defs)
+        file_defs |= extra_file_defs
     with tempdir() as source_dir:
         build_files(file_defs, source_dir)
         subprocess.check_call((sys.executable, 'setup.py',
@@ -517,10 +517,7 @@ WHEEL_INSTALL_TESTS = (
 )
 
 
-@pytest.mark.parametrize(
-    'params', WHEEL_INSTALL_TESTS,
-    ids=list(params['id'] for params in WHEEL_INSTALL_TESTS),
-)
+@pytest.mark.parametrize('params', WHEEL_INSTALL_TESTS, ids=[params['id'] for params in WHEEL_INSTALL_TESTS])
 def test_wheel_install(params):
     project_name = params.get('name', 'foo')
     version = params.get('version', '1.0')

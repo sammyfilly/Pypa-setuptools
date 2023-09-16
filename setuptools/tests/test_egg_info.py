@@ -54,10 +54,7 @@ class TestEggInfo:
             env = Environment(env_dir)
             os.chmod(env_dir, stat.S_IRWXU)
             subs = 'home', 'lib', 'scripts', 'data', 'egg-base'
-            env.paths = dict(
-                (dirname, os.path.join(env_dir, dirname))
-                for dirname in subs
-            )
+            env.paths = {dirname: os.path.join(env_dir, dirname) for dirname in subs}
             list(map(os.mkdir, env.paths.values()))
             build_files({
                 env.paths['home']: {
@@ -250,10 +247,7 @@ class TestEggInfo:
                 setup_py_requires, setup_cfg_requires, expected_requires = (
                     DALS(a).format(**format_dict) for a in test_params
                 )
-                for id_, requires, use_cfg in (
-                    (name, setup_py_requires, False),
-                    (name + '_in_setup_cfg', setup_cfg_requires, True),
-                ):
+                for id_, requires, use_cfg in ((name, setup_py_requires, False), (f'{name}_in_setup_cfg', setup_cfg_requires, True)):
                     idlist.append(id_)
                     marks = ()
                     if requires.startswith('@xfail\n'):
@@ -454,7 +448,7 @@ class TestEggInfo:
         else:
             install_requires = ''
         assert install_requires.lstrip() == expected_requires
-        assert glob.glob(os.path.join(env.paths['lib'], 'barbazquux*')) == []
+        assert not glob.glob(os.path.join(env.paths['lib'], 'barbazquux*'))
 
     def test_install_requires_unordered_disallowed(self, tmpdir_cwd, env):
         """
@@ -473,7 +467,7 @@ class TestEggInfo:
         self._setup_script_with_requires(req)
         with pytest.raises(AssertionError):
             self._run_egg_info_command(tmpdir_cwd, env)
-        assert glob.glob(os.path.join(env.paths['lib'], 'barbazquux*')) == []
+        assert not glob.glob(os.path.join(env.paths['lib'], 'barbazquux*'))
 
     def test_extras_require_with_invalid_marker_in_req(self, tmpdir_cwd, env):
         tmpl = 'extras_require={{"extra": ["barbazquux; {marker}"]}},'
@@ -481,7 +475,7 @@ class TestEggInfo:
         self._setup_script_with_requires(req)
         with pytest.raises(AssertionError):
             self._run_egg_info_command(tmpdir_cwd, env)
-        assert glob.glob(os.path.join(env.paths['lib'], 'barbazquux*')) == []
+        assert not glob.glob(os.path.join(env.paths['lib'], 'barbazquux*'))
 
     def test_provides_extra(self, tmpdir_cwd, env):
         self._setup_script_with_requires(
@@ -657,7 +651,7 @@ class TestEggInfo:
         egg_info_dir = os.path.join('.', 'foo.egg-info')
 
         with open(os.path.join(egg_info_dir, 'SOURCES.txt')) as sources_file:
-            sources_lines = list(line.strip() for line in sources_file)
+            sources_lines = [line.strip() for line in sources_file]
 
         for lf in incl_licenses:
             assert sources_lines.count(lf) == 1
@@ -757,7 +751,7 @@ class TestEggInfo:
         egg_info_dir = os.path.join('.', 'foo.egg-info')
 
         with open(os.path.join(egg_info_dir, 'SOURCES.txt')) as sources_file:
-            sources_lines = list(line.strip() for line in sources_file)
+            sources_lines = [line.strip() for line in sources_file]
 
         for lf in incl_licenses:
             assert sources_lines.count(lf) == 1
@@ -859,7 +853,7 @@ class TestEggInfo:
 
         assert 'setup.py' in egg_info_instance.filelist.files
 
-        with open(egg_info_instance.egg_info + "/SOURCES.txt") as f:
+        with open(f"{egg_info_instance.egg_info}/SOURCES.txt") as f:
             sources = f.read().split('\n')
             assert 'setup.py' in sources
 
